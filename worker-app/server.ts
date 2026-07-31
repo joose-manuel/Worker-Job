@@ -44,14 +44,24 @@ export function app(): express.Express {
   return server;
 }
 
+// Express app instance reused by both the local server and Vercel serverless functions.
+const server = app();
+
+export const reqHandler = server;
+
 function run(): void {
   const port = process.env['PORT'] || 4000;
 
   // Start up the Node server
-  const server = app();
   server.listen(port, () => {
     console.log(`Node Express server listening on http://localhost:${port}`);
   });
 }
 
-run();
+// Only start listening when executed directly (node server.mjs),
+// not when imported by Vercel serverless functions.
+const isDirectRun =
+  process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+if (isDirectRun) {
+  run();
+}

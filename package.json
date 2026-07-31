@@ -7,7 +7,12 @@
     "back": "nx serve back-app",
     "typeorm": "TS_NODE_TRANSPILE_ONLY=true TS_NODE_PROJECT=back-app/tsconfig.typeorm.json typeorm-ts-node-commonjs -d back-app/src/database/data-source.ts",
     "typeorm:run": "npm run typeorm migration:run",
-    "typeorm:revert": "npm run typeorm migration:revert"
+    "typeorm:revert": "npm run typeorm migration:revert",
+    "build:back": "nx build back-app",
+    "build:front": "npm --prefix worker-app run build",
+    "start:back": "node dist/back-app/main.js",
+    "deploy:back": "git push origin dev",
+    "deploy:front": "npx vercel --cwd worker-app --prod"
   },
   "devDependencies": {
     "@nestjs/schematics": "^11.0.0",
