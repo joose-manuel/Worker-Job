@@ -1,0 +1,12 @@
+{
+  "routes": [
+    "/",
+    "/ai-worker",
+    "/applications",
+    "/dashboard",
+    "/jobs",
+    "/login",
+    "/profile",
+    "/register"
+  ]
+}

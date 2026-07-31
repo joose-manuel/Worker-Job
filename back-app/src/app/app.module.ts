@@ -1,9 +1,19 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { WorkersModule } from '../modules/workers/worker.module';
+import { AiModule } from '../modules/ai/ai.module';
+import { AuthModule } from '../modules/auth/auth.module';
+import { ProfilesModule } from '../modules/profiles/profiles.module';
+import { WorkerConfigsModule } from '../modules/worker-configs/worker-configs.module';
+import { JobsModule } from '../modules/jobs/jobs.module';
+import { ApplicationsModule } from '../modules/applications/applications.module';
+import { WorkerScheduler } from '../modules/worker-configs/worker.scheduler';
+import { WorkerConfig } from '../modules/worker-configs/entities/worker-config.entity';
+import { WhatsappService } from '../common/utils/whatsapp.service';
 
 @Module({
   imports: [
@@ -21,9 +31,17 @@ import { WorkersModule } from '../modules/workers/worker.module';
         synchronize: false,
       }),
     }),
+    ScheduleModule.forRoot(),
+    AuthModule,
+    ProfilesModule,
+    WorkerConfigsModule,
+    JobsModule,
+    ApplicationsModule,
     WorkersModule,
+    AiModule,
+    TypeOrmModule.forFeature([WorkerConfig]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, WorkerScheduler, WhatsappService],
 })
 export class AppModule {}
