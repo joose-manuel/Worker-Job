@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "node scripts/set-env.mjs && npm run build",
   "outputDirectory": "dist/worker-app/browser",
   "rewrites": [
     { "source": "/", "destination": "/api" },
