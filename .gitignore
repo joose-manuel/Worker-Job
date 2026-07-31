@@ -11,7 +11,7 @@
 **/node_modules
 npm-debug.log
 yarn-error.log
-
+.env
 # IDEs and editors
 .idea/
 .project
@@ -53,4 +53,4 @@ Thumbs.db
 
 .nx/polygraph
 .claude/worktrees
-.claude/settings.local.json
+.claude/settings.local.jsonuploads/*.pdf
