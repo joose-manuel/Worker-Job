@@ -1,0 +1,12 @@
+{
+  "name": "Worker-Job",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "front": "npm --prefix worker-app run start",
+    "back": "npm --prefix back-app run start:dev"
+  },
+  "devDependencies": {
+    "nx": "23.1.1"
+  }
+}
