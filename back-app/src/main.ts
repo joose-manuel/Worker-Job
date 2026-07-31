@@ -10,14 +10,17 @@ import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:4200,https://worker-job.vercel.app')
+  const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:4200,https://worker-job.vercel.app,https://*.vercel.app')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
 
   const allowedOrigins = corsOrigins.map((origin) => {
     if (origin.includes('*')) {
-      const escaped = origin.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*');
+      const escaped = origin
+        .split('*')
+        .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*');
       return new RegExp(`^${escaped}$`);
     }
     return origin;
