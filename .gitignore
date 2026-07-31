@@ -34,7 +34,8 @@ yarn-error.log
 .nx/
 
 # Miscellaneous
-/.angular/cachef
+/.angular/cache/
+**/.angular/
 .sass-cache/
 /connect.lock
 /coverage
@@ -45,6 +46,10 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Env files
+.env
+!.env.example
 
 .nx/polygraph
 .claude/worktrees
