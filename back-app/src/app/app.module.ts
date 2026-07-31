@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { WorkersModule } from '../modules/workers/worker.module';
@@ -17,19 +18,30 @@ import { WhatsappService } from '../common/utils/whatsapp.service';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ envFilePath: 'back-app/.env', isGlobal: true }),
+    ConfigModule.forRoot({ envFilePath: join(__dirname, '..', '..', '.env'), isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get<string>('DB_HOST'),
-        port: config.get<number>('DB_PORT', 5432),
-        username: config.get<string>('DB_USER'),
-        password: config.get<string>('DB_PASSWORD'),
-        database: config.get<string>('DB_NAME'),
-        autoLoadEntities: true,
-        synchronize: false,
-      }),
+      useFactory: (config: ConfigService) => {
+        const databaseUrl = config.get<string>('DATABASE_URL');
+        if (databaseUrl) {
+          return {
+            type: 'postgres',
+            url: databaseUrl,
+            autoLoadEntities: true,
+            synchronize: false,
+          };
+        }
+        return {
+          type: 'postgres',
+          host: config.get<string>('DB_HOST'),
+          port: config.get<number>('DB_PORT', 5432),
+          username: config.get<string>('DB_USER'),
+          password: config.get<string>('DB_PASSWORD'),
+          database: config.get<string>('DB_NAME'),
+          autoLoadEntities: true,
+          synchronize: false,
+        };
+      },
     }),
     ScheduleModule.forRoot(),
     AuthModule,
