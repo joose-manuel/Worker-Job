@@ -14,7 +14,26 @@ async function bootstrap() {
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
-  app.enableCors({ origin: corsOrigins, credentials: true });
+
+  const allowedOrigins = corsOrigins.map((origin) => {
+    if (origin.includes('*')) {
+      const escaped = origin.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*');
+      return new RegExp(`^${escaped}$`);
+    }
+    return origin;
+  });
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const isAllowed = allowedOrigins.some((allowed) =>
+        typeof allowed === 'string' ? allowed === origin : allowed.test(origin),
+      );
+      return callback(isAllowed ? null : new Error(`CORS policy: Origin ${origin} not allowed`), isAllowed);
+    },
+    credentials: true,
+  });
+
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
