@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: worker-job-back
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run typeorm:run && npx nx build back-app
+    startCommand: npm run start:back
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
