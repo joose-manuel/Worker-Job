@@ -1,0 +1,16 @@
+.toggle { cursor: pointer; gap: 10px; }
+.toggle input { accent-color: var(--neon); width: 16px; height: 16px; }
+.portal-warn { font-size: 12px; margin-top: 6px; max-width: 320px; line-height: 1.5; }
+.config-grid { grid-template-columns: 1fr 1fr; align-items: start; }
+
+@media (max-width: 768px) {
+  .page-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .config-grid { grid-template-columns: 1fr; }
+  .portal-menu { max-width: none; }
+  .portal-warn { max-width: none; }
+}
+
+@media (max-width: 480px) {
+  .toggle { align-items: flex-start; }
+  .portal-add { flex-direction: column; }
+}

@@ -1,0 +1,36 @@
+<div class="shell">
+  <header class="topbar">
+    <button class="hamburger" (click)="mobileOpen = !mobileOpen" [attr.aria-label]="mobileOpen ? 'cerrar menú' : 'abrir menú'">
+      {{ mobileOpen ? '✕' : '☰' }}
+    </button>
+    <div class="brand mono glow">worker-job<span class="dim">&#64;</span>ai</div>
+    <button class="btn btn-danger topbar-logout" *ngIf="auth.currentUser$ | async" (click)="logout()" title="salir">⏻</button>
+  </header>
+
+  <aside class="sidebar" [class.collapsed]="collapsed" [class.mobile-open]="mobileOpen">
+    <div class="sidebar-top">
+      <div class="brand mono glow">worker-job<span class="dim">&#64;</span>ai</div>
+      <button class="collapse-btn" (click)="collapsed = !collapsed" [title]="collapsed ? 'expandir menú' : 'contraer menú'">
+        {{ collapsed ? '»' : '«' }}
+      </button>
+    </div>
+    <nav (click)="mobileOpen = false">
+      <a routerLink="/dashboard" routerLinkActive="active" [title]="collapsed ? 'dashboard' : null"><span class="icon">🏠</span><span class="label">▸ dashboard</span></a>
+      <a routerLink="/jobs" routerLinkActive="active" [title]="collapsed ? 'empleos' : null"><span class="icon">💼</span><span class="label">▸ empleos</span></a>
+      <a routerLink="/applications" routerLinkActive="active" [title]="collapsed ? 'postulaciones' : null"><span class="icon">♥</span><span class="label">▸ postulaciones</span></a>
+      <a routerLink="/profile" routerLinkActive="active" [title]="collapsed ? 'mi perfil' : null"><span class="icon">👤</span><span class="label">▸ mi perfil</span></a>
+      <a routerLink="/ai-worker" routerLinkActive="active" [title]="collapsed ? 'worker ia' : null"><span class="icon">⚙</span><span class="label">▸ worker ia</span></a>
+    </nav>
+    <div class="user-zone" *ngIf="auth.currentUser$ | async as user">
+      <div class="mono dim email" [title]="user.email">// {{ user.email }}</div>
+      <button class="btn btn-danger" (click)="logout()" [title]="collapsed ? 'salir' : null">{{ collapsed ? '⏻' : 'salir' }}</button>
+    </div>
+    <div class="dev mono dim" [title]="'desarrollado por José Manuel Hernández Dononado'">// jmhd-dev</div>
+  </aside>
+
+  <div class="backdrop" *ngIf="mobileOpen" (click)="mobileOpen = false"></div>
+
+  <main class="main-content">
+    <router-outlet />
+  </main>
+</div>

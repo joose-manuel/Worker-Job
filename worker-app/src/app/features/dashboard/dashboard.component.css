@@ -1,0 +1,30 @@
+.stats-grid { grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); }
+.side-grid { grid-template-columns: 1fr 1fr; }
+.stat { text-align: center; }
+.num { font-family: var(--mono); font-size: 42px; font-weight: 700; color: var(--neon); }
+.row { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; gap: 8px; flex-wrap: wrap; }
+.row:last-child { border-bottom: none; }
+.filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.filters .input { flex: 1; min-width: 180px; }
+.job-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.job-row:last-child { border-bottom: none; }
+.job-info { flex: 1; min-width: 0; }
+.job-title { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.job-title a { color: var(--neon); text-decoration: none; }
+.job-date { white-space: nowrap; font-size: 12px; }
+.pagination { padding-top: 12px; gap: 10px; flex-wrap: wrap; }
+
+@media (max-width: 768px) {
+  .side-grid { grid-template-columns: 1fr; }
+  .filters .input { min-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .job-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .job-date { white-space: normal; }
+  .pagination { justify-content: center; }
+  .num { font-size: 32px; }
+}

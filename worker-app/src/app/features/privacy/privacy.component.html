@@ -1,0 +1,37 @@
+<div class="page privacy-page">
+  <div class="flex-between mb page-head">
+    <h1 class="mono">▸ política de privacidad</h1>
+    <a routerLink="/login" class="btn">← volver</a>
+  </div>
+
+  <div class="card">
+    <p class="dim">Última actualización: {{ today | date: 'longDate' }}</p>
+
+    <h3 class="mono mb"># 1. qué datos recopilamos</h3>
+    <p class="desc mb">Para ofrecerte el servicio de búsqueda de empleo asistida por IA, recopilamos los datos que tú nos proporcionas: nombre, email, contraseña (almacenada de forma segura y encriptada), tu hoja de vida (PDF), perfil profesional, skills, ubicación, salario deseado y configuración de búsqueda (keywords, portales, modelo de IA).</p>
+
+    <h3 class="mono mb"># 2. cómo usamos tus datos</h3>
+    <p class="desc mb">Tus datos se utilizan exclusivamente para: (a) autenticarte en la aplicación, (b) buscar y filtrar vacantes de empleo en portales públicos de acuerdo a tu perfil, (c) calcular el porcentaje de compatibilidad (match) entre tu perfil y las vacantes, y (d) enviarte avisos por WhatsApp si activas esa opción con tu número y clave CallMeBot.</p>
+
+    <h3 class="mono mb"># 3. inteligencia artificial</h3>
+    <p class="desc mb">La lectura y análisis de tu hoja de vida, así como el match con vacantes, se realiza mediante proveedores de IA externos (Groq). Tu CV se envía únicamente para ese análisis y no se comparte con fines comerciales ni se vende a terceros.</p>
+
+    <h3 class="mono mb" id="cookies"># 4. cookies y almacenamiento local</h3>
+    <p class="desc mb">Usamos almacenamiento local del navegador (localStorage) para mantener tu sesión iniciada y recordar tus preferencias (incluida tu elección sobre cookies). No usamos cookies de rastreo ni publicidad de terceros.</p>
+
+    <h3 class="mono mb"># 5. retención y eliminación</h3>
+    <p class="desc mb">Tus datos permanecen en la base de datos mientras tu cuenta esté activa. Puedes eliminar tus datos en cualquier momento contactando al desarrollador; también puedes cerrar sesión y borrar los datos locales desde tu navegador.</p>
+
+    <h3 class="mono mb"># 6. seguridad</h3>
+    <p class="desc mb">Las contraseñas se almacenan con hash (bcrypt), las comunicaciones con el servidor se realizan sobre HTTPS y el acceso a los datos está protegido por tokens JWT por usuario.</p>
+
+    <h3 class="mono mb"># 7. tus derechos</h3>
+    <p class="desc mb">Tienes derecho a acceder, corregir o eliminar tus datos personales. Para ejercer estos derechos, contáctanos en la sección de contacto de esta página.</p>
+
+    <h3 class="mono mb"># 8. contacto</h3>
+    <div class="terminal">
+      <span class="prompt">$</span> desarrollador: José Manuel Hernández Dononado<br>
+      <span class="prompt">$</span> política de privacidad de worker-job&#64;ai
+    </div>
+  </div>
+</div>

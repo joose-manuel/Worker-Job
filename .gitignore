@@ -2,6 +2,7 @@
 
 # Compiled output
 /dist
+**/dist
 /tmp
 /out-tsc
 /bazel-out
@@ -53,4 +54,5 @@ Thumbs.db
 
 .nx/polygraph
 .claude/worktrees
-.claude/settings.local.jsonuploads/*.pdf
+.claude/settings.local.json
+uploads/*.pdf

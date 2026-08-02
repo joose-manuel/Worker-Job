@@ -1,0 +1,188 @@
+<div class="page">
+  <div class="flex-between mb page-head">
+    <div>
+      <h1 class="mono">▸ empleos encontrados <span class="dim">({{ jobs.length }})</span></h1>
+      <p class="dim">Vista principal con filtros por portal, fecha, estado, match y link de postulación.</p>
+    </div>
+    <button class="btn btn-primary" (click)="scan()" [disabled]="scanning">
+      {{ scanning ? 'buscando vacantes...' : '⚡ actualizar vacantes' }}
+    </button>
+  </div>
+
+  <div class="terminal mb" *ngIf="scanning">
+    <span class="prompt">$</span> buscando ofertas reales...<span class="cursor">▌</span>
+  </div>
+
+  <div class="terminal mb error-terminal" *ngIf="loadError">
+    <span class="prompt">$</span> error al cargar empleos: {{ loadError }}
+    <button class="btn btn-sm mt" (click)="load()">↻ reintentar</button>
+  </div>
+
+  <div class="terminal mb error-terminal" *ngIf="scanError">
+    <span class="prompt">$</span> error al escanear:<br>{{ scanError }}
+  </div>
+
+  <div class="terminal mb error-terminal" *ngIf="checkError">
+    <span class="prompt">$</span> {{ checkError }}
+  </div>
+
+  <details class="debug-panel mb" *ngIf="debug">
+    <summary class="mono dim">debug: payload enviado + respuesta cruda de la api</summary>
+    <div class="terminal debug-terminal">
+      <div class="mono label-debug">// payload (prompt) enviado a Groq</div>
+      <pre>{{ debug.prompt }}</pre>
+      <div class="mono label-debug">// respuesta cruda</div>
+      <pre *ngIf="debug.rawResponse !== null">{{ debug.rawResponse }}</pre>
+      <p class="dim mono" *ngIf="debug.rawResponse === null">// sin respuesta (la llamada a Groq falló)</p>
+      <div class="mono label-debug">// estado por portal</div>
+      <div class="portal-status" *ngFor="let p of debug.portals ?? []">
+        <span [ngClass]="p.ok ? 'status-ok' : 'status-fail'">{{ p.ok ? '✓' : '✗' }}</span>
+        {{ p.name }} — <span *ngIf="p.ok">ok ({{ p.count }} vacantes)</span><span *ngIf="!p.ok">error: {{ p.error }}</span>
+      </div>
+      <div class="dim mono">modelo: {{ debug.model }}</div>
+    </div>
+  </details>
+
+  <p class="dim mono" *ngIf="jobs.length === 0 && !scanning">
+    // sin resultados. completa tu perfil, configura el worker y presiona actualizar.
+  </p>
+
+  <button class="btn btn-sm filters-toggle" *ngIf="jobs.length > 0" type="button" (click)="filtersOpen = !filtersOpen">
+    {{ filtersOpen ? '▲ ocultar filtros' : '▼ filtros' }}
+  </button>
+
+  <div class="filters-wrap" [class.open]="filtersOpen">
+  <div class="filters" *ngIf="jobs.length > 0">
+    <input class="input" [(ngModel)]="pendingFilters.text" placeholder="buscar por título, empresa, ubicación o palabra clave" />
+    <select class="input" [(ngModel)]="pendingFilters.status">
+      <option value="">estado: todos</option>
+      <option value="found">no aplicado</option>
+      <option value="applied">aplicado</option>
+      <option value="interview">entrevista</option>
+      <option value="rejected">rechazado</option>
+      <option value="accepted">aceptado</option>
+    </select>
+    <select class="input" [(ngModel)]="pendingFilters.source">
+      <option value="">portal: todos</option>
+      <option value="computrabajo">Computrabajo</option>
+      <option value="el empleo">El Empleo</option>
+      <option value="trabajo.org">Trabajo.org</option>
+      <option value="linkedin">LinkedIn</option>
+      <option value="indeed">Indeed</option>
+      <option value="other">Otra web</option>
+    </select>
+    <select class="input" [(ngModel)]="pendingFilters.dateAge">
+      <option value="0">fecha: cualquiera</option>
+      <option value="7">últimos 7 días</option>
+      <option value="14">últimos 14 días</option>
+      <option value="30">últimos 30 días</option>
+      <option value="60">últimos 60 días</option>
+    </select>
+    <button class="btn btn-primary btn-search" (click)="applyFilters()">Buscar</button>
+  </div>
+
+  <div class="filters" *ngIf="jobs.length > 0">
+    <select class="input" [(ngModel)]="pendingFilters.match">
+      <option value="0">match: cualquiera</option>
+      <option value="60">match ≥ 60%</option>
+      <option value="75">match ≥ 75%</option>
+      <option value="90">match ≥ 90%</option>
+    </select>
+    <select class="input" [(ngModel)]="pendingFilters.hasLink">
+      <option value="">link: todos</option>
+      <option value="yes">con link</option>
+      <option value="no">sin link</option>
+    </select>
+    <select class="input" [(ngModel)]="pendingFilters.sortBy">
+      <option value="smart">ordenar: recientes + mejor match</option>
+      <option value="newest">ordenar: más recientes</option>
+      <option value="oldest">ordenar: más antiguas</option>
+      <option value="match">ordenar: mejor match</option>
+    </select>
+    <select class="input" [(ngModel)]="pageSize" (ngModelChange)="goToPage(1)">
+      <option [value]="6">6 por página</option>
+      <option [value]="12">12 por página</option>
+      <option [value]="24">24 por página</option>
+    </select>
+  </div>
+  </div>
+
+  <p class="dim mono" *ngIf="jobs.length > 0 && filteredJobs.length === 0">
+    // sin empleos con esos filtros
+  </p>
+
+  <div class="grid jobs-grid">
+    <div class="card job-card" *ngFor="let job of pageJobs">
+      <div class="card-head">
+        <div class="badges">
+          <span class="badge badge-new" *ngIf="isNew(job)" [title]="'traído en el último escaneo (' + (job.lastSeenAt | date: 'dd MMM HH:mm') + ')'">NEW</span>
+          <span class="badge score" *ngIf="job.matchPercent" [ngClass]="matchClass(job)">match {{ job.matchPercent }}%</span>
+          <span class="badge badge-secondary">{{ sourceLabel(job) }}</span>
+          <span class="badge" [ngClass]="statusBadge(job).class">{{ statusBadge(job).label }}</span>
+        </div>
+        <div class="actions">
+          <button
+            class="btn btn-sm heart"
+            [class.saved]="isSaved(job)"
+            (click)="toggleSave(job)"
+            [title]="isSaved(job) ? 'quitar de postulaciones' : 'guardar en postulaciones'"
+          >
+            <span class="heart-icon">{{ isSaved(job) ? '♥' : '♡' }}</span>
+            <span>{{ isSaved(job) ? 'guardado' : 'guardar' }}</span>
+          </button>
+          <button class="btn btn-danger btn-sm" (click)="remove(job.id)" title="eliminar empleo">✕</button>
+        </div>
+      </div>
+
+      <div class="match-bar" *ngIf="job.matchPercent">
+        <div class="match-fill" [style.width.%]="job.matchPercent"></div>
+      </div>
+
+      <h3 class="mono title">
+        <button type="button" class="title-link" *ngIf="job.url" (click)="openOffer(job)" [disabled]="openCountdown > 0 || openingId !== null">
+          {{ job.title }}
+        </button>
+        <span *ngIf="!job.url">{{ job.title }}</span>
+      </h3>
+
+      <div class="meta">
+        <span class="company">{{ job.company || 'empresa' }}</span>
+        <span class="loc" *ngIf="job.location">⌖ {{ job.location }}</span>
+      </div>
+
+      <p class="desc" *ngIf="job.description && previewJob !== job" [title]="job.description">{{ job.description }}</p>
+      <p class="mono reason" *ngIf="job.matchReason">// {{ job.matchReason }}</p>
+
+      <div class="preview" *ngIf="previewJob === job">
+        <div class="mono label-debug">// vista previa de la oferta</div>
+        <p class="preview-desc">{{ job.description || 'sin descripción disponible' }}</p>
+        <button class="btn btn-primary btn-sm" (click)="openOffer(job)" [disabled]="openCountdown > 0 || openingId !== null">
+          {{ openingId === job.id ? 'verificando...' : 'postularme ↗' }}
+        </button>
+      </div>
+
+      <div class="card-foot">
+        <span class="mono date">
+          {{ jobDateLabel(job) }} {{ jobDateValue(job) | date: 'dd MMM yyyy' }} · hace {{ daysSince(jobDateValue(job)) }} d
+        </span>
+        <div class="actions">
+          <button class="btn btn-primary btn-sm" (click)="copyApplyLink(job)" [disabled]="copying === job.id || !(job.applyUrl || job.url)">
+            {{ copied[job.id] ? 'link copiado ✓' : (copying === job.id ? 'copiando...' : 'copiar link') }}
+          </button>
+          <button class="btn btn-sm" (click)="togglePreview(job)" [class.btn-primary]="previewJob === job" [title]="previewJob === job ? 'cerrar vista previa' : 'ver descripción completa'">
+            {{ previewJob === job ? '✕ vista' : '👁 vista' }}
+          </button>
+          <button class="btn btn-secondary btn-sm" (click)="openOffer(job)" [disabled]="openCountdown > 0 || openingId !== null">
+            {{ openingId === job.id ? 'verificando...' : openCountdown > 0 ? 'espera ' + openCountdown + 's' : 'abrir oferta ↗' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-between pagination" *ngIf="filteredJobs.length > 0">
+    <button class="btn btn-sm" (click)="prevPage()" [disabled]="page <= 1">‹ prev</button>
+    <span class="dim mono">página {{ page }} / {{ totalPages }} · {{ filteredJobs.length }} empleos · mostrando {{ pageRange }} ({{ pageJobs.length }})</span>
+    <button class="btn btn-sm" (click)="nextPage()" [disabled]="page >= totalPages">next ›</button>
+  </div>
+</div>

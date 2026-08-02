@@ -15,7 +15,7 @@ export class ApplicationsService {
   findByUser(userId: number): Promise<Application[]> {
     return this.applicationsRepository.find({
       where: { userId },
-      order: { appliedAt: 'DESC' },
+      order: { appliedAt: 'DESC', job: { matchPercent: 'DESC' } },
       relations: { job: true },
     });
   }

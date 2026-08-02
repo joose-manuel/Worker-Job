@@ -26,7 +26,7 @@ export class AiService {
     }
     messages.push({ role: 'user', content: dto.message });
 
-    this.logger.log(`Groq request · modelo ${model} · payload:\n${JSON.stringify(messages, null, 2)}`);
+    this.logger.log(`Groq request · modelo ${model} · ${messages.length} mensajes`);
 
     const response = await fetch(GROQ_URL, {
       method: 'POST',
@@ -50,7 +50,7 @@ export class AiService {
     };
 
     const content = data.choices[0]?.message?.content ?? '';
-    this.logger.log(`Groq response OK · modelo ${data.model} · ${content.length} chars:\n${content}`);
+    this.logger.log(`Groq response OK · modelo ${data.model} · ${content.length} chars`);
 
     return {
       content,

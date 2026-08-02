@@ -20,11 +20,27 @@ import {
 } from './portal-scrapers';
 
 const SCAN_MIN_INTERVAL_MS = 60_000;
-const REQUEST_BUDGET = 28;
-const MAX_JOBS = 16;
+const REQUEST_BUDGET = 40;
+const MAX_JOBS = 32;
 const MAX_PER_PORTAL = 8;
 const MAX_DESCRIPTION_FETCHES = 10;
 const DEFAULT_MIN_MATCH = 40;
+
+function roundRobin(buckets: ScrapedJob[][], max: number): ScrapedJob[] {
+  const result: ScrapedJob[] = [];
+  let picked = true;
+  while (picked && result.length < max) {
+    picked = false;
+    for (const bucket of buckets) {
+      if (bucket.length) {
+        result.push(bucket.shift() as ScrapedJob);
+        picked = true;
+        if (result.length >= max) break;
+      }
+    }
+  }
+  return result;
+}
 
 export interface ScanDebug {
   model: string;
@@ -51,7 +67,10 @@ export class JobsService {
   ) {}
 
   findByUser(userId: number): Promise<Job[]> {
-    return this.jobsRepository.find({ where: { userId }, order: { createdAt: 'DESC' } });
+    return this.jobsRepository.find({
+      where: { userId },
+      order: { lastSeenAt: 'DESC', matchPercent: 'DESC', createdAt: 'DESC' },
+    });
   }
 
   async remove(userId: number, id: number): Promise<void> {
@@ -123,13 +142,12 @@ export class JobsService {
     const model = `scrapers (${selectedPortals.join(', ')}) + IA ${config.model ?? 'llama-3.3-70b-versatile'}`;
     const prompt = `Queries generadas por IA:\n${queries.map((q) => `- ${q}`).join('\n')}\nUbicación: ${location}`;
 
-    this.logger.log(`Scan iniciado para user ${userId}`);
-    this.logger.log(`PAYLOAD scrape:\n${prompt}`);
+    this.logger.log(`Scan iniciado para user ${userId} · portales: ${selectedPortals.join(', ')}`);
 
     const budget: Budget = { used: 0, max: REQUEST_BUDGET };
     const portalStatus: PortalStatus[] = [];
-    const scraped: ScrapedJob[] = [];
     const seen = new Set<string>();
+    const perPortal: ScrapedJob[][] = [];
 
     for (const name of selectedPortals) {
       const scraper = PORTAL_SCRAPERS[name];
@@ -138,19 +156,19 @@ export class JobsService {
         continue;
       }
       try {
-        const perPortal: ScrapedJob[] = [];
+        const portalJobs: ScrapedJob[] = [];
         for (const q of queries) {
           const found = await scraper.search(q, location, budget);
           for (const job of found) {
-            if (!seen.has(job.url)) {
-              seen.add(job.url);
-              perPortal.push(job);
-            }
+            const key = this.jobIdentityKey(job.url, job.applyUrl, job.title, job.company);
+            if (!key || seen.has(key)) continue;
+            seen.add(key);
+            portalJobs.push(job);
           }
-          if (perPortal.length >= MAX_PER_PORTAL) break;
+          if (portalJobs.length >= MAX_PER_PORTAL) break;
         }
-        const kept = perPortal.slice(0, MAX_PER_PORTAL);
-        scraped.push(...kept);
+        const kept = portalJobs.slice(0, MAX_PER_PORTAL);
+        perPortal.push(kept);
         portalStatus.push({ name, ok: true, count: kept.length });
         this.logger.log(`Portal ${name}: ${kept.length} vacantes reales`);
       } catch (error) {
@@ -163,6 +181,8 @@ export class JobsService {
         this.logger.warn(`Portal ${name} falló: ${message}`);
       }
     }
+
+    const scraped = roundRobin(perPortal, MAX_JOBS);
 
     const rawResponse = JSON.stringify(
       scraped.map((j) => ({ title: j.title, company: j.company, location: j.location, url: j.url })),
@@ -210,27 +230,139 @@ export class JobsService {
       `Scoring: ${scored.length} puntuadas, ${kept.length} pasan el umbral ${threshold}%`,
     );
 
-    const jobs = kept.map((job) =>
-      this.jobsRepository.create({
-        userId,
-        title: job.title,
-        company: job.company ?? null,
-        location: job.location ?? null,
-        url: job.url,
-        applyUrl: job.applyUrl || job.url,
-        description: job.description ?? null,
-        matchPercent: job.matchPercent ?? null,
-        matchReason: job.matchReason ?? null,
-        postedAt: this.parsePostedAt(job.postedAt),
-      }),
-    );
-    const saved = await this.jobsRepository.save(jobs);
+    const { saved, inserted, updated } = await this.upsertJobs(userId, kept);
+    const purged = await this.purgeDuplicateJobs(userId);
     await this.configsService.markRun(userId);
-    this.logger.log(`Scan completado para user ${userId}: ${saved.length} empleos reales guardados`);
+    this.logger.log(
+      `Scan completado para user ${userId}: ${saved.length} procesados (${inserted} nuevos, ${updated} actualizados, ${purged} duplicados eliminados)`,
+    );
+    const allJobs = await this.findByUser(userId);
     return {
-      jobs: saved,
+      jobs: allJobs,
       debug: { model, prompt, rawResponse, portals: portalStatus },
     };
+  }
+
+  private async upsertJobs(
+    userId: number,
+    kept: ScrapedJob[],
+  ): Promise<{ saved: Job[]; inserted: number; updated: number }> {
+    const existing = await this.jobsRepository.find({ where: { userId } });
+    const byUrl = new Map<string, Job>();
+    const bySoft = new Map<string, Job>();
+    for (const job of existing) {
+      const urlKey = this.normalizeJobUrl(job.applyUrl || job.url);
+      if (urlKey) byUrl.set(urlKey, job);
+      bySoft.set(this.jobSoftKey(job.title, job.company), job);
+    }
+
+    const toSave: Job[] = [];
+    let inserted = 0;
+    let updated = 0;
+
+    for (const job of kept) {
+      const urlKey = this.normalizeJobUrl(job.applyUrl || job.url);
+      const softKey = this.jobSoftKey(job.title, job.company);
+      const entity = (urlKey ? byUrl.get(urlKey) : undefined) ?? bySoft.get(softKey);
+      const postedAt = this.parsePostedAt(job.postedAt);
+      const lastSeenAt = new Date();
+
+      if (entity) {
+        entity.title = job.title;
+        entity.company = job.company ?? entity.company;
+        entity.location = job.location ?? entity.location;
+        entity.url = job.url || entity.url;
+        entity.applyUrl = job.applyUrl || job.url || entity.applyUrl;
+        if (job.description) entity.description = job.description;
+        entity.matchPercent = job.matchPercent ?? entity.matchPercent;
+        entity.matchReason = job.matchReason ?? entity.matchReason;
+        if (postedAt) entity.postedAt = postedAt;
+        entity.lastSeenAt = lastSeenAt;
+        toSave.push(entity);
+        updated += 1;
+      } else {
+        const created = this.jobsRepository.create({
+          userId,
+          title: job.title,
+          company: job.company ?? null,
+          location: job.location ?? null,
+          url: job.url,
+          applyUrl: job.applyUrl || job.url,
+          description: job.description ?? null,
+          matchPercent: job.matchPercent ?? null,
+          matchReason: job.matchReason ?? null,
+          postedAt,
+          lastSeenAt,
+        });
+        toSave.push(created);
+        inserted += 1;
+        if (urlKey) byUrl.set(urlKey, created);
+        bySoft.set(softKey, created);
+      }
+    }
+
+    const saved = toSave.length ? await this.jobsRepository.save(toSave) : [];
+    return { saved, inserted, updated };
+  }
+
+  private async purgeDuplicateJobs(userId: number): Promise<number> {
+    const existing = await this.jobsRepository.find({
+      where: { userId },
+      order: { createdAt: 'ASC' },
+    });
+    const seen = new Set<string>();
+    const removeIds: number[] = [];
+    for (const job of existing) {
+      const key = this.jobIdentityKey(job.url, job.applyUrl, job.title, job.company);
+      if (seen.has(key)) {
+        removeIds.push(job.id);
+      } else {
+        seen.add(key);
+      }
+    }
+    if (removeIds.length) {
+      await this.jobsRepository.delete(removeIds);
+    }
+    return removeIds.length;
+  }
+
+  private jobIdentityKey(
+    url?: string | null,
+    applyUrl?: string | null,
+    title?: string,
+    company?: string | null,
+  ): string {
+    const urlKey = this.normalizeJobUrl(applyUrl || url);
+    if (urlKey) return `url:${urlKey}`;
+    return `soft:${this.jobSoftKey(title ?? '', company)}`;
+  }
+
+  private normalizeJobUrl(url?: string | null): string {
+    if (!url?.trim()) return '';
+    try {
+      const parsed = new URL(url.trim());
+      parsed.hash = '';
+      parsed.hostname = parsed.hostname.toLowerCase();
+      parsed.protocol = 'https:';
+      for (const key of [...parsed.searchParams.keys()]) {
+        const lower = key.toLowerCase();
+        if (lower.startsWith('utm_') || ['fbclid', 'gclid', 'ref', 'source', 'mc_cid', 'mc_eid'].includes(lower)) {
+          parsed.searchParams.delete(key);
+        }
+      }
+      if (parsed.pathname.length > 1 && parsed.pathname.endsWith('/')) {
+        parsed.pathname = parsed.pathname.slice(0, -1);
+      }
+      return parsed.toString().toLowerCase();
+    } catch {
+      return url.trim().toLowerCase().replace(/\/+$/, '').split('#')[0];
+    }
+  }
+
+  private jobSoftKey(title: string, company?: string | null): string {
+    const t = title.toLowerCase().replace(/\s+/g, ' ').trim();
+    const c = (company ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+    return `${t}|${c}`;
   }
 
   private async expandQueries(

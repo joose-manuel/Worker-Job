@@ -1,0 +1,17 @@
+<div class="cookie-backdrop" *ngIf="visible" (click)="reject()"></div>
+
+<div class="cookie-modal card" *ngIf="visible" role="dialog" aria-label="consentimiento de cookies">
+  <div class="cookie-head">
+    <h3 class="mono glow">🍪 cookies</h3>
+    <button class="collapse-btn" (click)="reject()" title="cerrar">✕</button>
+  </div>
+  <p class="desc mb">
+    Usamos cookies y almacenamiento local solo para mantener tu sesión activa y recordar tus preferencias.
+    No rastreamos tu actividad ni vendemos tus datos.
+  </p>
+  <div class="cookie-actions">
+    <a routerLink="/privacy" class="btn btn-sm">política de privacidad</a>
+    <button class="btn btn-sm" (click)="reject()">rechazar</button>
+    <button class="btn btn-primary btn-sm" (click)="accept()">aceptar todo</button>
+  </div>
+</div>
