@@ -53,6 +53,7 @@ export interface Job {
   matchReason?: string | null;
   status: string;
   postedAt?: string | null;
+  lastSeenAt?: string | null;
   createdAt: string;
 }
 

@@ -394,6 +394,115 @@ export const elempleoScraper: PortalScraper = {
 };
 
 /* ------------------------------------------------------------------ */
+/* Trabajo.org                                                         */
+/* ------------------------------------------------------------------ */
+
+function buildTrabajoOrgSearchUrl(query: string, location: string, page: number): string {
+  const q = query.trim().replace(/\s+/g, '+');
+  const city = (location || 'colombia').toLowerCase().split(',')[0].trim();
+  const base = `https://co.trabajo.org/empleo-${q}/${encodeURIComponent(city)}`;
+  return page > 1 ? `${base}?page=${page}` : base;
+}
+
+function parseTrabajoOrgHtml(html: string): ScrapedJob[] {
+  const parts = html.split('class="nf-job list-group-item').slice(1);
+  const jobs: ScrapedJob[] = [];
+  const seen = new Set<string>();
+
+  for (const part of parts) {
+    const urlMatch = part.match(/data-url="([^"]+)"/);
+    const titleMatch = part.match(/<h3[^>]*>\s*<a[^>]*>([^<]+)<\/a>/i);
+    if (!urlMatch || !titleMatch) continue;
+
+    const title = clip(decodeHtml(titleMatch[1]), 200);
+    if (!title || title.includes('{{') || isNonTechRole(title)) continue;
+
+    const url = clip(urlMatch[1], 500);
+    if (seen.has(url)) continue;
+    seen.add(url);
+
+    const companyMatch = part.match(/lnr-briefcase[^>]*>[\s\S]*?<\/i>\s*([^<]+)/i);
+    const company = companyMatch ? clip(decodeHtml(companyMatch[1]), 200) : null;
+
+    const locationMatch = part.match(/lnr-map-marker[^>]*>[\s\S]*?<\/i>\s*([^<]+)/i);
+    const location = locationMatch ? clip(dedupeParts(decodeHtml(locationMatch[1])), 100) : null;
+
+    const modalityMatch = part.match(/lnr-laptop-phone[^>]*>[\s\S]*?<\/i>\s*([^<]+)/i);
+    const modalityRaw = modalityMatch ? decodeHtml(modalityMatch[1]) : null;
+    const modality = modalityRaw
+      ? (/remoto/i.test(modalityRaw) ? 'Remoto' : /hibrido|híbrido/i.test(modalityRaw) ? 'Híbrido' : /presencial/i.test(modalityRaw) ? 'Presencial' : modalityRaw.trim())
+      : undefined;
+
+    const descMatch = part.match(/nf-job-list-desc[\s\S]*?<p[^>]*>\s*([\s\S]*?)<\/p>/i);
+    const description = descMatch ? clip(decodeHtml(descMatch[1].replace(/<[^>]+>/g, ' ')), 500) : null;
+
+    jobs.push({
+      title,
+      company: company || undefined,
+      location: location || undefined,
+      url,
+      applyUrl: url,
+      description: description || clip([company, location, modality].filter(Boolean).join(' · ') || '', 500) || undefined,
+      modality,
+      postedAt: new Date().toISOString().slice(0, 10),
+    });
+  }
+
+  return jobs;
+}
+
+function extractTrabajoOrgDescription(html: string): string | null {
+  const marker = 'class="description-tr"';
+  const start = html.indexOf(marker);
+  if (start === -1) return null;
+  const open = html.lastIndexOf('<div', start);
+  if (open === -1) return null;
+  const tagRe = /<div[\s\S]*?>|<\/div>/g;
+  tagRe.lastIndex = open;
+  let depth = 0;
+  let m: RegExpExecArray | null;
+  let end = -1;
+  while ((m = tagRe.exec(html))) {
+    if (m[0] === '</div>') depth--;
+    else depth++;
+    if (depth === 0) {
+      end = m.index + m[0].length;
+      break;
+    }
+  }
+  if (end === -1) return null;
+  const raw = html.slice(open, end);
+  const cleaned = raw.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<[^>]+>/g, ' ');
+  return clip(decodeHtml(cleaned), 1200) || null;
+}
+
+export const trabajoOrgScraper: PortalScraper = {
+  name: 'Trabajo.org',
+  async search(query: string, location: string, budget: Budget): Promise<ScrapedJob[]> {
+    const jobs: ScrapedJob[] = [];
+    const seen = new Set<string>();
+    const politeness = { minDelay: 4000, maxDelay: 7000, retries: 3 };
+    for (let page = 1; page <= 2; page++) {
+      const url = buildTrabajoOrgSearchUrl(query, location, page);
+      logger.log(`Scrape Trabajo.org (página ${page}): ${url}`);
+      const response = await politeFetch(url, { budget, ...politeness });
+      const found = parseTrabajoOrgHtml(await response.text());
+      for (const job of found) {
+        if (seen.has(job.url)) continue;
+        seen.add(job.url);
+        jobs.push(job);
+      }
+      if (found.length < 5) break;
+    }
+    return jobs;
+  },
+  async extractDescription(url: string, budget: Budget): Promise<string | null> {
+    const response = await politeFetch(url, { budget });
+    return extractTrabajoOrgDescription(await response.text());
+  },
+};
+
+/* ------------------------------------------------------------------ */
 /* Indeed y LinkedIn (intento; suelen fallar por antibot/login)        */
 /* ------------------------------------------------------------------ */
 
@@ -439,6 +548,7 @@ export const PORTAL_SCRAPERS: Record<string, PortalScraper> = {
   computrabajo: computrabajoScraper,
   elempleo: elempleoScraper,
   'el empleo': elempleoScraper,
+  'trabajo.org': trabajoOrgScraper,
   indeed: indeedScraper,
   linkedin: linkedinScraper,
 };
@@ -447,6 +557,7 @@ export function scraperForUrl(url: string): PortalScraper | null {
   const u = url.toLowerCase();
   if (u.includes('computrabajo')) return computrabajoScraper;
   if (u.includes('elempleo')) return elempleoScraper;
+  if (u.includes('trabajo.org')) return trabajoOrgScraper;
   return null;
 }
 

@@ -39,6 +39,9 @@ export class Job {
   @Column({ type: 'timestamptz', nullable: true })
   postedAt: Date | null;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  lastSeenAt: Date | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

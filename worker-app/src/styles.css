@@ -171,3 +171,15 @@ h1, h2, h3 { font-weight: 600; margin: 0; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--neon); }
+
+@media (max-width: 768px) {
+  .page { padding: 16px; }
+  .input, select.input, textarea.input { font-size: 16px; }
+  .card { padding: 16px; }
+}
+
+@media (max-width: 480px) {
+  .page { padding: 12px; }
+  .btn { padding: 10px 14px; }
+  .terminal { padding: 12px; font-size: 12px; }
+}

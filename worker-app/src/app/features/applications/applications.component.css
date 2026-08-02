@@ -1,0 +1,13 @@
+.app-card { display: flex; flex-direction: column; gap: 8px; }
+.app-card h3 { font-size: 15px; }
+.gap { gap: 8px; }
+.app-head { flex-wrap: wrap; gap: 8px; }
+.app-update { gap: 8px; }
+.app-update .input { flex: 1; min-width: 0; }
+
+@media (max-width: 480px) {
+  .app-update { flex-direction: column; }
+  .app-update .input { width: 100% !important; }
+  .app-links { flex-direction: column; align-items: stretch; }
+  .app-links .btn { justify-content: center; }
+}

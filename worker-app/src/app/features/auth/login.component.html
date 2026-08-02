@@ -1,0 +1,61 @@
+<div class="auth-page">
+  <div class="auth-card card">
+    <div class="terminal mb">
+      <span class="prompt">$</span> iniciar sesion --user=tu&#64;email.com
+    </div>
+    <h1 class="mono glow">worker-job<span class="dim">&#64;</span>ai</h1>
+    <p class="dim mb">Encuentra tu próximo empleo con IA</p>
+
+    <form (ngSubmit)="submit()" class="grid">
+      <div class="field">
+        <label class="label">Email</label>
+        <div class="input-wrap">
+          <span class="input-icon">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M17 3H3C2.44772 3 2 3.44772 2 4V16C2 16.5523 2.44772 17 3 17H17C17.5523 17 18 16.5523 18 16V4C18 3.44772 17.5523 3 17 3Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2 6L10 10L18 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <input class="input" type="email" [(ngModel)]="email" name="email" placeholder="tu&#64;email.com" required autocomplete="email" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Contraseña</label>
+        <div class="input-wrap">
+          <span class="input-icon">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M15 9H5C3.89543 9 3 9.89543 3 11V16C3 17.1046 3.89543 18 5 18H15C16.1046 18 17 17.1046 17 16V11C17 9.89543 16.1046 9 15 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M14 9V6C14 3.79 12.21 2 10 2C7.79 2 6 3.79 6 6V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <input class="input" [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password" placeholder="••••••••" required autocomplete="current-password" />
+          <button type="button" class="pw-toggle" (click)="showPassword = !showPassword" [attr.aria-label]="showPassword ? 'ocultar contraseña' : 'mostrar contraseña'">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ng-container *ngIf="showPassword">
+                <path d="M8.5 4.16C8.97 4.06 9.47 4 10 4C15.41 4 18 10 18 10C18 10 17.51 11.14 16.5 12.43" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M14.5 14.5C13.31 15.4 11.81 16 10 16C4.59 16 2 10 2 10C2 10 3.14 7.28 5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M11.77 11.77C10.79 12.75 9.21 12.75 8.23 11.77C7.25 10.79 7.25 9.20998 8.23 8.22998" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 4L16 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </ng-container>
+              <ng-container *ngIf="!showPassword">
+                <path d="M2 10C2 10 4.59 4 10 4C15.41 4 18 10 18 10C18 10 15.41 16 10 16C4.59 16 2 10 2 10Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </ng-container>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div *ngIf="error" class="mono error">{{ error }}</div>
+      <button class="btn btn-primary submit-btn" [disabled]="loading">
+        {{ loading ? 'conectando...' : '→ entrar' }}
+      </button>
+    </form>
+
+    <p class="dim mt mono small">¿Sin cuenta? <a routerLink="/register">regístrate</a></p>
+    <p class="dim mono small mt">
+      <a routerLink="/privacy">política de privacidad</a> · <a routerLink="/privacy#cookies">cookies</a>
+    </p>
+
+    <div class="dev-credit mono dim mt">// desarrollado por José Manuel Hernández Dononado</div>
+  </div>
+</div>

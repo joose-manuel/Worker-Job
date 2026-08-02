@@ -14,6 +14,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/register.component').then((m) => m.RegisterComponent),
   },
   {
+    path: 'privacy',
+    loadComponent: () => import('./features/privacy/privacy.component').then((m) => m.PrivacyComponent),
+  },
+  {
     path: '',
     component: ShellComponent,
     canActivate: [authGuard],
