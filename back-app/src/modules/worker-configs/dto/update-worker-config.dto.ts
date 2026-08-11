@@ -48,10 +48,6 @@ export class UpdateWorkerConfigDto {
   whatsappPhone?: string;
 
   @IsOptional()
-  @IsString()
-  whatsappApiKey?: string;
-
-  @IsOptional()
   @IsBoolean()
   notifyWhatsapp?: boolean;
 }

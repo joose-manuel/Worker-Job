@@ -13,7 +13,7 @@ import { WorkerConfig } from '../../core/models/models';
   styleUrl: './ai-worker.component.css',
 })
 export class AiWorkerComponent implements OnInit {
-  config: WorkerConfig & { whatsappPhone?: string | null; whatsappApiKey?: string | null } = {
+  config: WorkerConfig = {
     keywords: [],
     portals: [],
     intervalMinutes: 60,
@@ -23,7 +23,6 @@ export class AiWorkerComponent implements OnInit {
     notifyWhatsapp: false,
     minMatchPercent: 40,
     whatsappPhone: null,
-    whatsappApiKey: null,
   };
   keywordsText = '';
   selectedPortals: string[] = [];
@@ -92,6 +91,9 @@ export class AiWorkerComponent implements OnInit {
   save() {
     this.saving = true;
     this.config.portals = [...this.selectedPortals];
+    if (this.config.whatsappPhone) {
+      this.config.whatsappPhone = this.config.whatsappPhone.replace(/\D/g, '');
+    }
     this.api.put<WorkerConfig>('/worker-config/me', this.config, this.auth.token).subscribe(() => {
       this.saving = false;
     });
