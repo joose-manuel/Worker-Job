@@ -1,5 +1,8 @@
 .toggle { cursor: pointer; gap: 10px; }
 .toggle input { accent-color: var(--neon); width: 16px; height: 16px; }
+.phone-input { display: flex; align-items: center; gap: 8px; padding: 0; overflow: hidden; }
+.phone-prefix { padding-left: 12px; color: var(--neon, #0ff); font-weight: 500; }
+.phone-input input { flex: 1; border: none; background: transparent; padding: 10px 12px 10px 0; outline: none; color: inherit; }
 .portal-warn { font-size: 12px; margin-top: 6px; max-width: 320px; line-height: 1.5; }
 .config-grid { grid-template-columns: 1fr 1fr; align-items: start; }
 

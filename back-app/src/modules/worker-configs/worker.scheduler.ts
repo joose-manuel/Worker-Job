@@ -29,12 +29,8 @@ export class WorkerScheduler {
       try {
         this.logger.log(`Ejecutando scan automático para user ${config.userId}`);
         const { jobs } = await this.jobsService.scan(config.userId);
-        if (config.notifyWhatsapp && config.whatsappPhone && config.whatsappApiKey && jobs.length > 0) {
-          await this.whatsappService.sendJobsNotification(
-            config.whatsappPhone,
-            config.whatsappApiKey,
-            jobs,
-          );
+        if (config.notifyWhatsapp && config.whatsappPhone && jobs.length > 0) {
+          await this.whatsappService.sendJobsNotification(config.whatsappPhone, jobs);
         }
       } catch (error) {
         this.logger.error(`Scan automático falló para user ${config.userId}: ${error}`);

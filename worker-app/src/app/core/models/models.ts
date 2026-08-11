@@ -37,7 +37,6 @@ export interface WorkerConfig {
   autoApply: boolean;
   notifyWhatsapp: boolean;
   whatsappPhone?: string | null;
-  whatsappApiKey?: string | null;
   lastRunAt?: string | null;
 }
 

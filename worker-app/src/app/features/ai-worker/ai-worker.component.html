@@ -83,12 +83,11 @@
         </label>
         <div class="grid">
           <div>
-            <label class="label">WhatsApp (con país, ej: +34644519523)</label>
-            <input class="input" [(ngModel)]="config.whatsappPhone" placeholder="+34644519523" />
-          </div>
-          <div>
-            <label class="label">CallMeBot API Key</label>
-            <input class="input" [(ngModel)]="config.whatsappApiKey" placeholder="1234567" />
+            <label class="label">WhatsApp (+57 Colombia)</label>
+            <div class="input phone-input">
+              <span class="phone-prefix">+57</span>
+              <input type="text" [(ngModel)]="config.whatsappPhone" placeholder="3001234567" maxlength="10" />
+            </div>
           </div>
           <label class="toggle flex">
             <input type="checkbox" [(ngModel)]="config.notifyWhatsapp" />

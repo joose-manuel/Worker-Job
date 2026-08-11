@@ -47,6 +47,10 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+._*
+
+# Generated files
+codebase-graph.html
 
 # Env files
 .env
