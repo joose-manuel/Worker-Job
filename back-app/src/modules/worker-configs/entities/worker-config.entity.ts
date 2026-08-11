@@ -40,9 +40,6 @@ export class WorkerConfig {
   @Column({ type: 'boolean', default: false })
   autoApply: boolean;
 
-  @Column({ type: 'varchar', length: 30, nullable: true })
-  whatsappPhone: string | null;
-
   @Column({ type: 'boolean', default: false })
   notifyWhatsapp: boolean;
 

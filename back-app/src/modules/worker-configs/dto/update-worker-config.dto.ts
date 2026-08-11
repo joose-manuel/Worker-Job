@@ -44,10 +44,6 @@ export class UpdateWorkerConfigDto {
   autoApply?: boolean;
 
   @IsOptional()
-  @IsString()
-  whatsappPhone?: string;
-
-  @IsOptional()
   @IsBoolean()
   notifyWhatsapp?: boolean;
 }

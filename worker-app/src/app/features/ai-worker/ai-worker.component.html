@@ -83,15 +83,21 @@
         </label>
         <div class="grid">
           <div>
-            <label class="label">WhatsApp (+57 Colombia)</label>
-            <div class="input phone-input">
-              <span class="phone-prefix">+57</span>
-              <input type="text" [(ngModel)]="config.whatsappPhone" placeholder="3001234567" maxlength="10" />
+            <label class="label">Notificaciones push (ntfy)</label>
+            <div class="terminal" *ngIf="config.ntfyTopic">
+              <span class="prompt">$</span> tu topic: <strong>{{ config.ntfyTopic }}</strong>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="copyTopic()">copiar</button>
             </div>
+            <p class="dim portal-warn">
+              1. Instala la app <strong>ntfy</strong> (Play Store / App Store).
+              2. Toca "+" y suscríbete a tu topic (cópialo arriba).
+              3. Activa las notificaciones y guarda.
+              4. Escríbele cualquier cosa al bot en ese chat: te responde con tus vacantes guardadas y postulaciones.
+            </p>
           </div>
           <label class="toggle flex">
             <input type="checkbox" [(ngModel)]="config.notifyWhatsapp" />
-            <span class="mono">avisarme por WhatsApp al encontrar empleos</span>
+            <span class="mono">avisarme cuando encuentre empleos</span>
           </label>
         </div>
         <div class="terminal" *ngIf="config.lastRunAt">

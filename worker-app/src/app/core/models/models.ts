@@ -36,7 +36,7 @@ export interface WorkerConfig {
   enabled: boolean;
   autoApply: boolean;
   notifyWhatsapp: boolean;
-  whatsappPhone?: string | null;
+  ntfyTopic?: string;
   lastRunAt?: string | null;
 }
 
