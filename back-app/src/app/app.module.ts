@@ -14,7 +14,8 @@ import { JobsModule } from '../modules/jobs/jobs.module';
 import { ApplicationsModule } from '../modules/applications/applications.module';
 import { WorkerScheduler } from '../modules/worker-configs/worker.scheduler';
 import { WorkerConfig } from '../modules/worker-configs/entities/worker-config.entity';
-import { WhatsappService } from '../common/utils/whatsapp.service';
+import { NotificationService } from '../common/utils/notification.service';
+import { NtfyChatService } from '../common/utils/ntfy-chat.service';
 
 @Module({
   imports: [
@@ -54,6 +55,6 @@ import { WhatsappService } from '../common/utils/whatsapp.service';
     TypeOrmModule.forFeature([WorkerConfig]),
   ],
   controllers: [AppController],
-  providers: [AppService, WorkerScheduler, WhatsappService],
+  providers: [AppService, WorkerScheduler, NotificationService, NtfyChatService],
 })
 export class AppModule {}

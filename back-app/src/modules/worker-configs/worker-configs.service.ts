@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WorkerConfig } from './entities/worker-config.entity';
 import { UpdateWorkerConfigDto } from './dto/update-worker-config.dto';
-import { WhatsappService } from '../../common/utils/whatsapp.service';
+import { NotificationService } from '../../common/utils/notification.service';
 
 @Injectable()
 export class WorkerConfigsService {
@@ -12,49 +12,49 @@ export class WorkerConfigsService {
   constructor(
     @InjectRepository(WorkerConfig)
     private readonly configsRepository: Repository<WorkerConfig>,
-    private readonly whatsappService: WhatsappService,
+    private readonly notifications: NotificationService,
   ) {}
 
   get(userId: number): Promise<WorkerConfig | null> {
     return this.configsRepository.findOneBy({ userId });
   }
 
-  async upsert(userId: number, dto: UpdateWorkerConfigDto): Promise<WorkerConfig> {
+  /** Vista para el frontend: config (si existe) más el topic ntfy del usuario. */
+  async getView(userId: number): Promise<Partial<WorkerConfig> & { ntfyTopic: string }> {
+    const config = await this.get(userId);
+    const ntfyTopic = this.notifications.getTopic(userId);
+    return config ? { ...config, ntfyTopic } : { ntfyTopic };
+  }
+
+  async upsert(
+    userId: number,
+    dto: UpdateWorkerConfigDto,
+  ): Promise<WorkerConfig & { ntfyTopic: string }> {
     const existing = await this.get(userId);
 
     if (existing) {
-      const shouldNotifyWelcome = this.shouldSendWelcome(existing, dto);
+      const notificationsJustEnabled = dto.notifyWhatsapp === true && !existing.notifyWhatsapp;
       Object.assign(existing, dto);
       const saved = await this.configsRepository.save(existing);
-      if (shouldNotifyWelcome) {
-        this.whatsappService.sendWelcome(saved.whatsappPhone!).catch((error) => {
-          this.logger.warn(`No se pudo enviar mensaje de bienvenida: ${error}`);
+      if (notificationsJustEnabled) {
+        this.notifications.sendWelcome(userId).catch((error) => {
+          this.logger.warn(`No se pudo enviar notificación de bienvenida: ${error}`);
         });
       }
-      return saved;
+      return { ...saved, ntfyTopic: this.notifications.getTopic(userId) };
     }
 
     const config = this.configsRepository.create({ ...dto, userId });
     const saved = await this.configsRepository.save(config);
-    if (saved.notifyWhatsapp && saved.whatsappPhone) {
-      this.whatsappService.sendWelcome(saved.whatsappPhone).catch((error) => {
-        this.logger.warn(`No se pudo enviar mensaje de bienvenida: ${error}`);
+    if (saved.notifyWhatsapp) {
+      this.notifications.sendWelcome(userId).catch((error) => {
+        this.logger.warn(`No se pudo enviar notificación de bienvenida: ${error}`);
       });
     }
-    return saved;
+    return { ...saved, ntfyTopic: this.notifications.getTopic(userId) };
   }
 
   async markRun(userId: number): Promise<void> {
     await this.configsRepository.update({ userId }, { lastRunAt: new Date() });
-  }
-
-  private shouldSendWelcome(existing: WorkerConfig, dto: UpdateWorkerConfigDto): boolean {
-    if (!dto.whatsappPhone && !('whatsappPhone' in dto)) return false;
-    const newPhone = this.whatsappService.normalizePhone(dto.whatsappPhone ?? existing.whatsappPhone);
-    const oldPhone = this.whatsappService.normalizePhone(existing.whatsappPhone);
-    const phoneChanged = newPhone && newPhone !== oldPhone;
-    const notificationsEnabled =
-      dto.notifyWhatsapp === true && !existing.notifyWhatsapp && newPhone;
-    return Boolean(phoneChanged || notificationsEnabled);
   }
 }

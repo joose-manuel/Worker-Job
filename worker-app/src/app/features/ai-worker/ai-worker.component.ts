@@ -22,7 +22,6 @@ export class AiWorkerComponent implements OnInit {
     autoApply: false,
     notifyWhatsapp: false,
     minMatchPercent: 40,
-    whatsappPhone: null,
   };
   keywordsText = '';
   selectedPortals: string[] = [];
@@ -39,11 +38,17 @@ export class AiWorkerComponent implements OnInit {
   ngOnInit() {
     this.api.get<WorkerConfig>('/worker-config/me', this.auth.token).subscribe((data) => {
       if (data) {
-        this.config = data;
+        this.config = { ...this.config, ...data };
         this.keywordsText = (data.keywords ?? []).join(', ');
         this.selectedPortals = [...(data.portals ?? [])].map((p) => this.aliasPortal(p));
       }
     });
+  }
+
+  copyTopic() {
+    if (this.config.ntfyTopic) {
+      navigator.clipboard?.writeText(this.config.ntfyTopic);
+    }
   }
 
   private aliasPortal(value: string): string {
@@ -91,9 +96,6 @@ export class AiWorkerComponent implements OnInit {
   save() {
     this.saving = true;
     this.config.portals = [...this.selectedPortals];
-    if (this.config.whatsappPhone) {
-      this.config.whatsappPhone = this.config.whatsappPhone.replace(/\D/g, '');
-    }
     this.api.put<WorkerConfig>('/worker-config/me', this.config, this.auth.token).subscribe(() => {
       this.saving = false;
     });

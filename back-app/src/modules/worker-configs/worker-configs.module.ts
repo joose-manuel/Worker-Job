@@ -5,12 +5,12 @@ import { WorkerConfigsService } from './worker-configs.service';
 import { WorkerConfig } from './entities/worker-config.entity';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthModule } from '../auth/auth.module';
-import { WhatsappService } from '../../common/utils/whatsapp.service';
+import { NotificationService } from '../../common/utils/notification.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([WorkerConfig]), AuthModule],
   controllers: [WorkerConfigsController],
-  providers: [WorkerConfigsService, JwtAuthGuard, WhatsappService],
+  providers: [WorkerConfigsService, JwtAuthGuard, NotificationService],
   exports: [WorkerConfigsService, TypeOrmModule],
 })
 export class WorkerConfigsModule {}

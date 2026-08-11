@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WorkerConfig } from '../worker-configs/entities/worker-config.entity';
 import { JobsService } from '../jobs/jobs.service';
-import { WhatsappService } from '../../common/utils/whatsapp.service';
+import { NotificationService } from '../../common/utils/notification.service';
 
 @Injectable()
 export class WorkerScheduler {
@@ -14,7 +14,7 @@ export class WorkerScheduler {
     @InjectRepository(WorkerConfig)
     private readonly configsRepository: Repository<WorkerConfig>,
     private readonly jobsService: JobsService,
-    private readonly whatsappService: WhatsappService,
+    private readonly notifications: NotificationService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -29,8 +29,8 @@ export class WorkerScheduler {
       try {
         this.logger.log(`Ejecutando scan automático para user ${config.userId}`);
         const { jobs } = await this.jobsService.scan(config.userId);
-        if (config.notifyWhatsapp && config.whatsappPhone && jobs.length > 0) {
-          await this.whatsappService.sendJobsNotification(config.whatsappPhone, jobs);
+        if (config.notifyWhatsapp && jobs.length > 0) {
+          await this.notifications.sendJobsNotification(config.userId, jobs);
         }
       } catch (error) {
         this.logger.error(`Scan automático falló para user ${config.userId}: ${error}`);

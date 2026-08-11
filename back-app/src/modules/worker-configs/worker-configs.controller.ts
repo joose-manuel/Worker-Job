@@ -10,7 +10,7 @@ export class WorkerConfigsController {
 
   @Get('me')
   get(@Req() req: AuthRequest) {
-    return this.configsService.get(req.user.sub);
+    return this.configsService.getView(req.user.sub);
   }
 
   @Put('me')
